@@ -11,11 +11,11 @@ class SnakeLink:
             b=(length / 2, 0),
             radius=radius
         )
-        self.body = pymunk.Body(mass, inertia)
-        self.body.position = position
+        self._body = pymunk.Body(mass, inertia)
+        self._body.position = position
 
         self._shape = pymunk.Segment(
-            self.body,
+            self._body,
             a=(-length / 2, 0),
             b=(length / 2, 0),
             radius=radius
@@ -23,10 +23,10 @@ class SnakeLink:
         self._shape.elasticity = 0.5
 
     def add_to_space(self, space: pymunk.Space):
-        space.add(self.body, self._shape)
+        space.add(self._body, self._shape)
 
     def remove_from_space(self, space: pymunk.Space):
-        space.remove(self.body, self._shape)
+        space.remove(self._body, self._shape)
 
 
 class SnakeJoint:
@@ -66,7 +66,7 @@ class SnakeRobot:
             ))
 
         for n in range(n_links):
-            link_a, link_b = self._links[n].body, self._links[n + 1].body
+            link_a, link_b = self._links[n]._body, self._links[n + 1]._body
             self._joints.append(SnakeJoint(
                 link_a=link_a,
                 link_b=link_b,
@@ -92,7 +92,7 @@ class SnakeRobot:
             joint.set_speed(speed)
 
     def get_link_angles(self):
-        return [link.body.angle for link in self._links]
+        return [link._body.angle for link in self._links]
 
     def get_joint_angles(self):
         link_angles = self.get_link_angles()
@@ -100,12 +100,15 @@ class SnakeRobot:
         return [b - a for a, b in angle_pairs]
 
     def get_heading(self):
-        return self._links[-1].body.angle
+        return self._links[-1]._body.angle
 
     def get_link_angvels(self):
-        return [link.body.angular_velocity for link in self._links]
+        return [link._body.angular_velocity for link in self._links]
 
     def get_joint_angvels(self):
         link_angvels = self.get_link_angvels()
         angvel_pairs = zip(link_angvels[:-1], link_angvels[1:])
         return [b - a for a, b in angvel_pairs]
+
+    def get_head_x_vel(self):
+        return self._links[-1]._body.velocity.x

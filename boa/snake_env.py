@@ -19,8 +19,8 @@ class SnakeEnv(gym.Env):
         super().__init__()
 
         self._space = pymunk.Space()
-        self._obstacles = []
-        self._snake_robot = None
+        self._obstacles: [pymunk.Shape] = []
+        self._snake_robot: SnakeRobot = None
         self._reset_obstacles()
         self._reset_robot()
 
@@ -36,8 +36,8 @@ class SnakeEnv(gym.Env):
     def _reset_obstacles(self):
         if self._obstacles:
             self._space.remove(*self._obstacles)
+            self._obstacles = []
 
-        self._obstacles = []
         for x in range(0, self.SCREEN_WIDTH, self.OBSTACLE_DISTANCE_AVG):
             for y in range(0, self.SCREEN_HEIGHT, self.OBSTACLE_DISTANCE_AVG):
                 rand_x = random.uniform(-self.OBSTACLE_DISTANCE_VAR, self.OBSTACLE_DISTANCE_VAR)
@@ -65,12 +65,22 @@ class SnakeEnv(gym.Env):
         self._snake_robot.add_to_space(self._space)
 
     def step(self, action):
+        err_msg = f"{action} ({type(action)}) invalid)"
+        assert self.action_space.contains(action), err_msg
+
+        self._snake_robot.set_motor_speeds(action)
         self._space.step(self.DELTA_T)
         self.current_iteration += 1
+
+        reward = self._snake_robot.get_head_x_vel()
+        done = self.current_iteration > 300
+
+        return None, reward, done, {}
 
     def reset(self):
         self._reset_obstacles()
         self._reset_robot()
+        self.current_iteration = 0
 
     def render(self, mode='human'):
 
