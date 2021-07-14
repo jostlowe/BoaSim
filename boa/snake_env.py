@@ -70,16 +70,29 @@ class SnakeEnv(gym.Env):
 
         self._snake_robot.set_motor_speeds(action)
         self._space.step(self.DELTA_T)
+
+        (head_xvel, _head_yvel) = self._snake_robot.get_head_velocity()
+        reward = head_xvel
+
+        head_x, head_y = self._snake_robot.get_head_position()
+
+        is_timeout = self.current_iteration > 300
+        is_at_end = head_x > self.SCREEN_WIDTH
+        is_out_of_bounds = head_y > self.SCREEN_HEIGHT or head_y < 0
+
+        done = is_timeout or is_at_end or is_out_of_bounds
+
         self.current_iteration += 1
-
-        reward = self._snake_robot.get_head_x_vel()
-        done = self.current_iteration > 300
-
         return None, reward, done, {}
 
     def reset(self):
         self._reset_obstacles()
         self._reset_robot()
+
+        # Do some iterations to stabilize the simulation
+        for i in range(10):
+            self.step([0 for _ in self._snake_robot._joints])
+
         self.current_iteration = 0
 
     def render(self, mode='human'):
