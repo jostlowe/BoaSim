@@ -1,3 +1,4 @@
+import math
 import random
 import pygame
 import pymunk
@@ -14,6 +15,7 @@ class SnakeEnv(gym.Env):
     SCREEN_HEIGHT = 600
     DELTA_T = 1 / 30
     N_LINKS = 10
+    N_JOINTS = N_LINKS - 1
 
     def __init__(self):
         super().__init__()
@@ -31,7 +33,21 @@ class SnakeEnv(gym.Env):
         self._clock = None
 
         self.current_iteration = 0
-        self.action_space = gym.spaces.Box(low=-1, high=1, shape=(self.N_LINKS,), dtype=np.float)
+
+        # 1 is max CW speed, -1 = max CCW speed
+        self.action_space = gym.spaces.Box(
+            low=-1,
+            high=1,
+            shape=(self.N_JOINTS,),
+            dtype=np.float
+        )
+
+        self.observation_space = gym.spaces.Box(
+            low=-math.pi / 2,
+            high=math.pi / 2,
+            shape=(self.N_LINKS*3, ),
+            dtype=np.float
+        )
 
     def _reset_obstacles(self):
         if self._obstacles:
@@ -46,6 +62,7 @@ class SnakeEnv(gym.Env):
                 obstacle = pymunk.Circle(self._space.static_body, radius=random.uniform(5, 10), offset=offset)
                 obstacle.friction = 0
                 obstacle.elasticity = 0.5
+                obstacle.collision_type = 0
                 self._obstacles.append(obstacle)
 
         self._space.add(*self._obstacles)
@@ -64,26 +81,38 @@ class SnakeEnv(gym.Env):
         )
         self._snake_robot.add_to_space(self._space)
 
-    def step(self, action):
-        err_msg = f"{action} ({type(action)}) invalid)"
-        assert self.action_space.contains(action), err_msg
-
-        self._snake_robot.set_motor_speeds(action)
-        self._space.step(self.DELTA_T)
-
-        (head_xvel, _head_yvel) = self._snake_robot.get_head_velocity()
-        reward = head_xvel
-
-        head_x, head_y = self._snake_robot.get_head_position()
-
+    def _is_done(self):
+        head_x, head_y = self._snake_robot.head.body.position
         is_timeout = self.current_iteration > 300
         is_at_end = head_x > self.SCREEN_WIDTH
         is_out_of_bounds = head_y > self.SCREEN_HEIGHT or head_y < 0
 
-        done = is_timeout or is_at_end or is_out_of_bounds
+        return is_timeout or is_at_end or is_out_of_bounds
+
+    def _get_observation(self):
+        forces = np.concatenate(self._snake_robot.get_collision_forces()) / 1000
+        angles = np.array(self._snake_robot.get_link_angles())
+        return np.concatenate((forces, angles))
+
+    def step(self, action):
+        # Set the joint motor speeds
+        self._snake_robot.set_motor_speeds(action)
+
+        # Iterate the physics simulation
+        self._space.step(self.DELTA_T)
+
+        # Calculate the reward as the global x-velocity of the head link
+        (head_xvel, _head_yvel) = self._snake_robot.head.body.velocity
+        reward = head_xvel
+
+        # Check if the episode is done
+        done = self._is_done()
 
         self.current_iteration += 1
-        return None, reward, done, {}
+
+        observation = self._get_observation()
+
+        return observation, reward, done, {}
 
     def reset(self):
         self._reset_obstacles()
@@ -94,6 +123,8 @@ class SnakeEnv(gym.Env):
             self.step([0 for _ in self._snake_robot._joints])
 
         self.current_iteration = 0
+
+        return self._get_observation()
 
     def render(self, mode='human'):
 
@@ -109,5 +140,3 @@ class SnakeEnv(gym.Env):
         # Delay fixed time between frames
         self._clock.tick(30)
         pygame.display.set_caption(f"fps: {self._clock.get_fps()}")
-
-
