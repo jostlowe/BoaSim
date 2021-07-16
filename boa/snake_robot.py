@@ -20,7 +20,7 @@ class SnakeLink:
             b=(length / 2, 0),
             radius=radius,
         )
-        self.shape.elasticity = 0.5
+        self.shape.elasticity = 0.2
         self.shape.collision_type = link_number
 
         self.link_number = link_number

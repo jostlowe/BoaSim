@@ -12,7 +12,7 @@ if __name__ == "__main__":
         done = False
         total_reward = 0.0
         while not done:
-            action = [1 for i in range(9)] #game.action_space.sample()
+            action = game.action_space.sample()
             observation, reward, done, _info = game.step(action)
             total_reward += reward
             print(observation)
@@ -20,5 +20,4 @@ if __name__ == "__main__":
             game.render()
             #print(f"measurement: {observation}")
             #print(game._snake_robot.get_joint_angles())
-            input()
         print(f"Run {i}: Total reward {total_reward}")

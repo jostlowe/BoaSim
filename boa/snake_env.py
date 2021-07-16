@@ -61,7 +61,7 @@ class SnakeEnv(gym.Env):
                 offset = (x + rand_x, y + rand_y)
                 obstacle = pymunk.Circle(self._space.static_body, radius=random.uniform(5, 10), offset=offset)
                 obstacle.friction = 0
-                obstacle.elasticity = 0.5
+                obstacle.elasticity = 0.2
                 obstacle.collision_type = 0
                 self._obstacles.append(obstacle)
 
