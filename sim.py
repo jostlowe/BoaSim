@@ -24,10 +24,12 @@ Nj = N-1
 M = 0.4
 x0, y0 = 100, 200
 
-path = [0]*Nj + [ pi/4, 0, 0, -pi/2, -pi/2, 0, 0, pi/2, pi/2, 0, 0, -pi/4] + [0]*50
+path_deg = [0]*Nj + [ 51, 0, 0, -90, -88, 0, 0, 90, 90, 0, 0, -55, 0, 0, -45, -90, -45, 0, 0, 45, 45] + 50*[0]
+path = [deg/180*pi for deg in path_deg]
+#path = [0]*Nj + [ pi/4, 0, 0, -pi/2, -pi/2, 0, 0, pi/2, pi/2, 0, 0, -pi/4] +
 print(path)
 
-obstacle_pos = [(200, 215), (300, 185), (400, 215), (500, 185), (580, 150), (570, 220), (640, 190), (680, 155), (720, 190)]
+obstacle_pos = [(200, 215), (300, 185), (400, 215), (500, 185), (580, 150), (570, 220), (640, 190), (680, 155), (720, 190), (640, 240)]
 
 
 
@@ -73,7 +75,7 @@ class SnakeRobot():
 
 def main():
     pygame.init()
-    screen = pygame.display.set_mode((1000, 1000))
+    screen = pygame.display.set_mode((1000, 600))
     clock = pygame.time.Clock()
     space = pymunk.Space()
     draw_options = pymunk.pygame_util.DrawOptions(screen)
@@ -102,10 +104,9 @@ def main():
 
         #target_angles = path[s: s+Nj]
         target_angles = [ksi_a*(1-tl) + ksi_b*(tl) for ksi_a, ksi_b in pairwise(path[s:s+N])]
-        print(target_angles)
 
         target_speeds = [
-            3 * (target - actual)
+            5 * (target - actual)
             for target, actual in zip(target_angles, boa.joint_angles)
         ]
 
