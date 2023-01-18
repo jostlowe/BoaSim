@@ -12,6 +12,7 @@ import pygame
 
 import pymunk
 import pymunk.pygame_util
+from math import pi
 
 from itertools import pairwise
 random.seed(1)
@@ -19,8 +20,15 @@ random.seed(1)
 L = 15
 R = 5
 N = 15
+Nj = N-1
 M = 0.4
 x0, y0 = 100, 200
+
+path = [0]*Nj + [ pi/4, 0, 0, -pi/2, -pi/2, 0, 0, pi/2, pi/2, 0, 0, -pi/4] + [0]*50
+print(path)
+
+obstacle_pos = [(200, 215), (300, 185), (400, 215), (500, 185), (580, 150), (570, 220), (640, 190), (680, 155), (720, 190)]
+
 
 
 class SnakeRobot():
@@ -46,7 +54,7 @@ class SnakeRobot():
             for link_a, link_b in pairwise(self.bodies)
         ]
         for motor in self.motors:
-            motor.max_force = 10000
+            motor.max_force = 20000
 
         space.add(*self.bodies, *self.segments, *self.joints, *self.motors)
 
@@ -62,19 +70,24 @@ class SnakeRobot():
     def joint_angles(self):
         return [a - b for a, b in pairwise(self.link_angles)]
 
+
 def main():
     pygame.init()
-    screen = pygame.display.set_mode((600, 600))
+    screen = pygame.display.set_mode((1000, 1000))
     clock = pygame.time.Clock()
     space = pymunk.Space()
     draw_options = pymunk.pygame_util.DrawOptions(screen)
     boa = SnakeRobot(space)
     target_angles = [0]*(N-1)
     t = 0
+    tp = 0
 
-    space.add(pymunk.Circle(space.static_body, 10, (150, 200)))
+    for pos in obstacle_pos:
+        space.add(pymunk.Circle(space.static_body, 10, pos))
+
     while True:
         t += 1/200
+        tp = t/2
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 sys.exit(0)
@@ -84,7 +97,12 @@ def main():
         space.step(1 / 200.0)
         screen.fill((255, 255, 255))
 
-        target_angles = [0.5*math.sin(t + i) for i in range(N)]
+        s = math.ceil(tp)
+        tl = tp-s+1
+
+        #target_angles = path[s: s+Nj]
+        target_angles = [ksi_a*(1-tl) + ksi_b*(tl) for ksi_a, ksi_b in pairwise(path[s:s+N])]
+        print(target_angles)
 
         target_speeds = [
             3 * (target - actual)
