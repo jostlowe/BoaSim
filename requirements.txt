@@ -1,3 +1,2 @@
 pygame==2.1.2
 pymunk==6.0.0
-numpy==1.21.0

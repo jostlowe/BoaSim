@@ -43,6 +43,7 @@ class SnakeRobot():
         self.segments = [pymunk.Segment(body, (-L, 0), (L, 0), R) for body in self.bodies]
         for segment in self.segments:
             segment.mass = M
+            segment.friction = 0.2
 
         self.joints = [
             pymunk.PivotJoint(link_a, link_b, (L, 0), (-L, 0))
@@ -85,7 +86,9 @@ def main():
     tp = 0
 
     for pos in obstacle_pos:
-        space.add(pymunk.Circle(space.static_body, 10, pos))
+        obstacle = pymunk.Circle(space.static_body, 10, pos)
+        obstacle.friction = 0.2
+        space.add(obstacle)
 
     while True:
         t += 1/200
